@@ -4,21 +4,26 @@ var minimist = require('minimist');
 var fs = require('fs');
 
 // Jobs:
-var capabilities = ["agnostic_functional_audit", "webrtc_quality_audit",
-    "repository_functional_audit", "recorder_stability_audit", "recorder_s3_functional_audit",
-    "recorder_functional_audit", "player_stability_audit", "player_functional_audit",
-    "dispatcher_functional_audit", "composite_functional_audit", "capability_stability_audit",
-    "capability_functional_audit", "longstability_recorder_s3_audit"
+var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
+    "dispatcher_functional_audit", "kms_profiling_audit", "kurento_api_client_java_W_audit",
+    "kurento_api_client_js_W_browser_audit", "kurento_api_client_js_W_node_0_12_audit",
+    "kurento_api_client_js_W_node_4_x_audit", "kurento_api_client_js_W_node_5_x_audit",
+    "kurento_api_client_js_W_node_6_x_audit", "kurento_api_client_js_W_node_restart_audit",
+    "kurento_api_modules_js_W_node_0_12_audit", "kurento_api_modules_js_W_node_4_x_audit",
+    "kurento_api_modules_js_W_node_5_x_audit", "kurento_api_protocol_java_audit",
+    "kurento_api_repository_java_audit", "kurento_room_audit", "kurento_tutorial_java_audit",
+    "kurento_tutorial_java_fiware", "longstability_recorder_s3_audit", "player_functional_audit",
+    "player_stability_audit", "recorder_functional_audit", "recorder_s3_functional_audit",
+    "recorder_stability_audit", "repository_functional_audit"
 ];
 
 var sfu = ["sfu_stability_audit", "sfu_quality_audit", "sfu_functional_recorder_audit",
     "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_chrome"
 ];
 
-var cluster = ["test_cluster_autoscaling", "test_cluster_cloud", "test_cluster_ha",
-    "test_cluster_kurento_client_js", "test_cluster_recorder", "test_cluster_stability",
-    "test_cluster_webrtc_cs_presenter", "test_cluster_webrtc_cs_session", "test_cluster_webrtc_cs_viewer",
-    "test_cluster_longtermstability"
+var cluster = ["test_cluster_autoscaling", "test_cluster_cloud", "test_cluster_ha", "test_cluster_kurento_client_js",
+    "test_cluster_longtermstability", "test_cluster_recorder", "test_cluster_stability", "test_cluster_webrtc_cs_presenter",
+    "test_cluster_webrtc_cs_session", "test_cluster_webrtc_cs_viewer"
 ];
 
 var ice = ["ice_ipv4_cluster_udp_reflexive_chrome_dev", "ice_ipv4_cluster_udp_reflexive_chrome_beta", "ice_ipv4_cluster_udp_reflexive_chrome",
