@@ -40,26 +40,15 @@ var ice = ["ice_ipv4_cluster_udp_reflexive_chrome_dev", "ice_ipv4_cluster_udp_re
 
 var datachannels = ["datachannel_functional_chrome_dev_chrome_dev", "datachannel_functional_chrome_beta_chrome_beta", "datachannel_functional_chrome_chrome"];
 
-// Update this list when there is new issues or someone been closed
-var issues = {
-    "https://redmine.kurento.org/redmine/issues/4357": "Check audio. There were more than 2 seconds of silence",
-    "https://redmine.kurento.org/redmine/issues/4386": "Timeout of 200 seconds waiting for file",
-    "https://redmine.kurento.org/redmine/issues/4383": "Seek fails",
-    "https://redmine.kurento.org/redmine/issues/4382": "is not between the bitrate range",
-    "https://redmine.kurento.org/redmine/issues/4378": "Not received FLOWING IN event in webRtcEp",
-    "https://redmine.kurento.org/redmine/issues/4377": "Not received media",
-    "https://redmine.kurento.org/redmine/issues/4369": "The color of the recorded video should be",
-    "https://redmine.kurento.org/redmine/issues/4369": "Not received media in the recording",
-    "https://redmine.kurento.org/redmine/issues/4340": "Error in play time in the recorded video (expected",
-    "https://redmine.kurento.org/redmine/issues/4353": "Not received FLOWING IN event in webRtcEp"
-};
+var issuesRedmine = new Array();
 
 var argv = minimist(process.argv.slice(2), {});
 
 var authJenkins = argv.authJenkins;
+var authRedmine = argv.authRedmine;
 
-if (authJenkins == undefined) {
-    console.error("Please type: npm start -- --authJenkins=user:jenkinsToken")
+if (authJenkins == undefined || authRedmine == undefined) {
+    console.error("Please type: npm start -- --authJenkins=user:jenkinsToken --authRedmine=user:password")
     return;
 }
 
@@ -116,10 +105,13 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                     for (var j = json.suites[i].cases.length - 1; j >= 0; j--) {
                                         if ((json.suites[i].cases[j].status == "REGRESSION") || (json.suites[i].cases[j].status == "FAILED")) {
                                             var issueLine = "";
-                                            for (issue in issues) {
-                                                if (json.suites[i].cases[j].errorDetails.indexOf(issues[issue]) != -1) {
-                                                    issueLine = '<font size="2" color="black">: Issue <a href="' + issue + '" target="_blank">#' + issue.substring(issue.lastIndexOf('/') + 1) + '</a></font>';
-                                                    break;
+                                            for (issue in issuesRedmine) {
+                                                var message = issuesRedmine[issue].description.split("Message: ")
+                                                if (message.length > 0) {
+                                                    if ((issuesRedmine[issue].description.indexOf(job) != -1) && (json.suites[i].cases[j].errorDetails.indexOf(message[1]) != -1)) {
+                                                        issueLine = '<font size="2" color="black">: Issue <a href="https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font>';
+                                                        break;
+                                                    }
                                                 }
                                             }
                                             hasRegression = true;
@@ -224,6 +216,13 @@ function getStability(jobs, auditFolder, callbackEnd) {
             var score = jobByScore[i].score;
             var job = jobByScore[i].job;
             jobLine = jobLine + '<li><font size="2" color="black">Estabilidad: ' + score + '%  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
+            jobLine = jobLine + '<ul>';
+            for (issue in issuesRedmine) {
+                if (issuesRedmine[issue].description.indexOf(job) != -1) {
+                    jobLine = jobLine + '<li><font size="2" color="black"><a href="https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font></li>';
+                }
+            }
+            jobLine = jobLine + '</ul>';
         }
         jobLine = jobLine + "</ul>";
         fs.appendFile(filePath + fileName, "" + jobLine + "", function(err) {
@@ -237,6 +236,40 @@ function getStability(jobs, auditFolder, callbackEnd) {
 }
 
 
+function getIssuesRedmine(callback) {
+    var issuesList = new Array();
+    var URI = 'https://' + authRedmine + '@redmine.kurento.org/redmine/projects/kurento-media-server/issues.json';
+
+    var options = {
+        url: URI,
+        headers: {
+            'Content-Type': 'Content-Type: application/json',
+            'Accept': 'application/json'
+        },
+        strictSSL: false,
+        method: 'GET'
+    }
+
+    request(options, function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var json = JSON.parse(body);
+            var issues = json.issues;
+            for (var i = issues.length - 1; i >= 0; i--) {
+                var issue = issues[i];
+                var oneIssue = {
+                    subject: issue.subject,
+                    status: issue.status.name,
+                    id: issue.id,
+                    description: issue.description
+                };
+                issuesList.push(oneIssue);
+            };
+
+        }
+        callback(issuesList)
+    })
+}
+
 // Init
 
 fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', function(err) {
@@ -245,30 +278,35 @@ fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="
     }
 });
 
+
 //getStatus(cluster, "Cluster", function() {});
-getStatus(datachannels, "Datachannels", function() {
-    getStatus(sfu, "SFU", function() {
-        getStatus(capabilities, "Capabilities", function() {
-            getStatus(ice, "WebRtc", function() {
-                getStatus(cluster, "Cluster", function() {
-                    fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
-                        if (err) {
-                            return console.log(err);
-                        }
-                        getStability(datachannels, "Datachannels", function() {
-                            getStability(sfu, "SFU", function() {
-                                getStability(capabilities, "Capabilities", function() {
-                                    getStability(ice, "WebRtc", function() {
-                                        getStability(cluster, "Cluster", function() {
-                                        	console.log("Report created at: ", filePath + fileName);
+getIssuesRedmine(function(issues) {
+    issuesRedmine = issues;
+
+    getStatus(datachannels, "Datachannels", function() {
+        getStatus(sfu, "SFU", function() {
+            getStatus(capabilities, "Capabilities", function() {
+                getStatus(ice, "WebRtc", function() {
+                    getStatus(cluster, "Cluster", function() {
+                        fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
+                            if (err) {
+                                return console.log(err);
+                            }
+                            getStability(datachannels, "Datachannels", function() {
+                                getStability(sfu, "SFU", function() {
+                                    getStability(capabilities, "Capabilities", function() {
+                                        getStability(ice, "WebRtc", function() {
+                                            getStability(cluster, "Cluster", function() {
+                                                console.log("Report created at: ", filePath + fileName);
+                                            })
                                         })
                                     })
                                 })
                             })
                         })
-                    })
-                });
+                    });
 
+                })
             })
         })
     })
