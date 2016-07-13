@@ -21,7 +21,7 @@ var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
 ];
 
 var sfu = ["sfu_stability_audit", "sfu_quality_audit", "sfu_functional_recorder_audit",
-    "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_chrome"
+    "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_chrome"
 ];
 
 var cluster = ["test_cluster_autoscaling", "test_cluster_cloud", "test_cluster_ha", "test_cluster_kurento_client_js",
@@ -356,7 +356,7 @@ function getIssueTrelloById(id, dashboard, columnName, callback_) {
                                 var descriptionHtml = '<b>Dashboard:</b> ' + dashboard + '; <b>Issue:</b> (' + subject + '; <a href="' + url + '" target="_blank">#' + id + '</a>); <b>Status:</b> ' + columnName
 
                                 if (columnName.indexOf('Completada') != -1) {
-									descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
+                                    descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
                                 }
                                 var oneIssue = {
                                     subject: subject,
