@@ -124,7 +124,7 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                                         }
                                                     };
                                                     if ((issuesRedmine[issue].description.indexOf(job) != -1) && existMessage) {
-                                                        issueLine = '<font size="2" color="black">: Issue <a href="' + issuesRedmine[issue].url + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font>';
+                                                        issueLine = '<ul><li><font size="2" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></ul></li>';
                                                         break;
                                                     }
                                                 }
@@ -234,7 +234,7 @@ function getStability(jobs, auditFolder, callbackEnd) {
             jobLine = jobLine + '<ul>';
             for (issue in issuesRedmine) {
                 if (issuesRedmine[issue].description.indexOf(job) != -1) {
-                    jobLine = jobLine + '<li><font size="2" color="black"><a href="' + issuesRedmine[issue].url + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font></li>';
+                    jobLine = jobLine + '<li><font size="2" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></li>';
                 }
             }
             jobLine = jobLine + '</ul>';
@@ -275,12 +275,14 @@ function getIssuesRedmine(callback) {
                 if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
                     status = status + " " + issue.updated_on.split('T')[0];
                 }
+                var url = 'https://redmine.kurento.org/redmine/issues/' + issue.id;
                 var oneIssue = {
                     subject: issue.subject,
                     status: status,
                     id: issue.id,
                     description: issue.description,
-                    url: 'https://redmine.kurento.org/redmine/issues/' + issue.id
+                    url: url,
+                    descriptionHtml: '<b>Redmine; </b><b>Issue:</b> (' + issue.subject + '; <a href="' + url + '" target="_blank">#' + issue.id + '</a>); <b>Status:</b> ' + status
                 };
                 issuesList.push(oneIssue);
             };
@@ -325,7 +327,7 @@ fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text
 
 var count = 0;
 
-function getIssueTrelloById(id, columnName, callback_) {
+function getIssueTrelloById(id, dashboard, columnName, callback_) {
     t.get("1/list/" + id, { fields: "name", cards: "open", card_fields: "name" }, function(err, data) {
         if (err) throw err;
         async.eachOfSeries(data.cards, function(job, undefined, callback) {
@@ -353,7 +355,8 @@ function getIssueTrelloById(id, columnName, callback_) {
                                     status: columnName,
                                     id: id,
                                     description: description,
-                                    url: url
+                                    url: url,
+                                    descriptionHtml: '<b>Dashboard:</b> ' + dashboard + '; <b>Issue:</b> (' + subject + '; <a href="' + url + '" target="_blank">#' + id + '</a>); <b>Status:</b> ' + columnName
                                 };
                                 issuesRedmine.push(oneIssue);
                                 callback(oneIssue)
@@ -373,17 +376,22 @@ function getIssueTrelloById(id, columnName, callback_) {
 
 function getIssueTrello(callback) {
 
-    var dashboards = ["566562180f0520308b696468", "55e06936c58d0dd41677730a", "55dff5a0d6fef7a4d0dfe641"];
-    async.eachOfSeries(dashboards, function(dashboard, undefined, callback_) {
-        t.get("1/boards/" + dashboard + "/lists", function(err, data) {
+    var dashboards = {
+        "566562180f0520308b696468": "DevOps & CI Dashboard",
+        "55e06936c58d0dd41677730a": "Apps, APIs Dashboard",
+        "55dff5a0d6fef7a4d0dfe641": "MediaServer Dashboard"
+    };
+    async.eachOfSeries(dashboards, function(value, key, callback_) {
+        t.get("1/boards/" + key + "/lists", function(err, data) {
             if (err) throw err;
+            var dashboard = value;
             async.eachOfSeries(data, function(column, undefined, callback__) {
                 if (count == 60) {
                     sleep.sleep(12)
                     count = 0;
                 }
                 count++;
-                getIssueTrelloById(column.id, column.name, callback__)
+                getIssueTrelloById(column.id, dashboard, column.name, callback__)
             }, function(err) {
                 callback_()
             });
