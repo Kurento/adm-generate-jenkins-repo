@@ -58,7 +58,7 @@ if (authJenkins == undefined || authRedmine == undefined) {
 }
 
 var path = "ci.kurento.org/jenkins/job/Development/view/4%20-%20Audit/view/";
-var filePath = "/Users/rbenitez/";
+var filePath = "./";
 var fileName = "jenkinsReport.html";
 
 function getStatus(jobs, auditFolder, callbackEnd) {
@@ -250,7 +250,7 @@ function getStability(jobs, auditFolder, callbackEnd) {
 
 function getIssuesRedmine(callback) {
     var issuesList = new Array();
-    var URI = 'https://' + authRedmine + '@redmine.kurento.org/redmine/projects/kurento-media-server/issues.json';
+    var URI = 'https://' + authRedmine + '@redmine.kurento.org/redmine/projects/kurento-media-server/issues.json?status_id=*';
 
     var options = {
         url: URI,
@@ -268,9 +268,13 @@ function getIssuesRedmine(callback) {
             var issues = json.issues;
             for (var i = issues.length - 1; i >= 0; i--) {
                 var issue = issues[i];
+                var status = issue.status.name;
+                if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
+                	status = status + " " + issue.updated_on.split('T')[0];
+                }
                 var oneIssue = {
                     subject: issue.subject,
-                    status: issue.status.name,
+                    status: status,
                     id: issue.id,
                     description: issue.description,
                     url: 'https://redmine.kurento.org/redmine/issues/' + issue.id
@@ -284,8 +288,7 @@ function getIssuesRedmine(callback) {
 }
 
 // Init
-
-fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', function(err) {
+fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
     if (err) {
         return console.log(err);
     }
