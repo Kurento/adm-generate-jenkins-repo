@@ -276,7 +276,7 @@ function getIssuesRedmine(callback) {
 
                 if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
                     status = status + " " + issue.updated_on.split('T')[0];
-                    descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
+                    descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + ' - ' + issue.updated_on.split('T')[0] + '</span></strike>';
                 }
                 var url = 'https://redmine.kurento.org/redmine/issues/' + issue.id;
                 var oneIssue = {
