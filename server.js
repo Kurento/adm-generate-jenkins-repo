@@ -2,6 +2,9 @@ var request = require('request');
 var async = require('async');
 var minimist = require('minimist');
 var fs = require('fs');
+var sleep = require('sleep');
+var Trello = require("node-trello");
+var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71eaf4657c2600348cd64b35fa57c30e6e52c38834f");
 
 // Jobs:
 var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
@@ -270,7 +273,7 @@ function getIssuesRedmine(callback) {
                 var issue = issues[i];
                 var status = issue.status.name;
                 if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
-                	status = status + " " + issue.updated_on.split('T')[0];
+                    status = status + " " + issue.updated_on.split('T')[0];
                 }
                 var oneIssue = {
                     subject: issue.subject,
@@ -288,14 +291,12 @@ function getIssuesRedmine(callback) {
 }
 
 // Init
-fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
+fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
     if (err) {
         return console.log(err);
     }
 });
 
-var Trello = require("node-trello");
-var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71eaf4657c2600348cd64b35fa57c30e6e52c38834f");
 
 /*t.get("/1/members/me", function(err, data) {
   if (err) throw err;
@@ -306,6 +307,7 @@ var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71e
 // 566562180f0520308b696468 - https://trello.com/b/rF2FksBo/devops-ci-dashboard
 // 55e06936c58d0dd41677730a - https://trello.com/b/ZU9T2a1w/apps-apis-dashboard
 // 55e04479402e09ba324dd485 - https://trello.com/b/MgCVSBM8/media-server-backlog
+// 55dff5a0d6fef7a4d0dfe641 - dhttps://trello.com/b/Y8zbXJOS/mediaserver-dashboard
 
 /*t.get("/1/boards/55e06936c58d0dd41677730a?lists=open&list_fields=name&fields=name,desc", function(err, data) {
     if (err) throw err;
@@ -318,13 +320,20 @@ var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71e
 
 // Get information for each issue
 // 1/cards/574c4c8d7b89d05856356f37/actions
+// Get column for each board
 //https://api.trello.com/1/boards/55e04479402e09ba324dd485/lists
 
+var count = 0;
 
-function getIssueTrelloById(id, callback_) {
-    t.get("1/list/" + id + "?fields=name&cards=open&card_fields=name", function(err, data) {
+function getIssueTrelloById(id, columnName, callback_) {
+    t.get("1/list/" + id, { fields: "name", cards: "open", card_fields: "name" }, function(err, data) {
         if (err) throw err;
-        async.each(data.cards, function(job, callback) {
+        async.eachOfSeries(data.cards, function(job, undefined, callback) {
+            count++
+            if (count == 60) {
+                sleep.sleep(20);
+                count = 0;
+            }
             async.parallel([
                     function(callback) {
                         t.get("/1/cards/" + job.id, function(err, card) {
@@ -334,13 +343,14 @@ function getIssueTrelloById(id, callback_) {
                                 var subject = job.name;
                                 var id = job.id;
                                 for (elem in infoCard) {
+                                    //console.log(infoCard[elem])
                                     if (infoCard[elem].type == "commentCard") {
                                         description = description + " " + infoCard[elem].data.text;
                                     }
                                 }
                                 var oneIssue = {
                                     subject: subject,
-                                    status: "Open",
+                                    status: columnName,
                                     id: id,
                                     description: description,
                                     url: url
@@ -363,42 +373,54 @@ function getIssueTrelloById(id, callback_) {
 
 function getIssueTrello(callback) {
 
-    async.parallel([
-            function(callback_) {
-                // Id bug board of https://trello.com/b/MgCVSBM8/media-server-backlog
-                getIssueTrelloById('55e04489abe6984f1d19ebb4', callback_)
-            },
-            function(callback_) {
-                // Id Bug board of https://trello.com/b/rF2FksBo/devops-ci-dashboard
-                getIssueTrelloById('56bda041476abe11e0d54a59', callback_)
-            },
-            function(callback_) {
-                // Id Bug board of https://trello.com/b/rF2FksBo/devops-ci-dashboard
-                getIssueTrelloById('5731e7cb84d97439fdcfdfbc', callback_)
-            }
-        ],
-        function(err, results) {
-            callback();
-        });
+    var dashboards = ["566562180f0520308b696468", "55e06936c58d0dd41677730a", "55dff5a0d6fef7a4d0dfe641"];
+    async.eachOfSeries(dashboards, function(dashboard, undefined, callback_) {
+        t.get("1/boards/" + dashboard + "/lists", function(err, data) {
+            if (err) throw err;
+            async.eachOfSeries(data, function(column, undefined, callback__) {
+                if (count == 60) {
+                    sleep.sleep(12)
+                    count = 0;
+                }
+                count++;
+                getIssueTrelloById(column.id, column.name, callback__)
+            }, function(err) {
+                callback_()
+            });
+        })
+    }, function(err) {
+        callback()
+    });
 }
 
-
+console.log("Getting Redmine issues ...");
 getIssuesRedmine(function(issues) {
     issuesRedmine = issues;
+    console.log("Getting Trello issues ...");
     getIssueTrello(function(issues_) {
+        console.log("Processing Datachannels Dashboard ...")
         getStatus(datachannels, "Datachannels", function() {
+            console.log("Processing SFU Dashboard ...");
             getStatus(sfu, "SFU", function() {
+                console.log("Processing Kurento Dashboard ...");
                 getStatus(capabilities, "Capabilities", function() {
+                    console.log("Processing WebRtc Dashboard ...");
                     getStatus(ice, "WebRtc", function() {
+                        console.log("Processing Cluster Dashboard ...")
                         getStatus(cluster, "Cluster", function() {
                             fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
                                 if (err) {
                                     return console.log(err);
                                 }
+                                console.log("Processing Datachannels Stability ...")
                                 getStability(datachannels, "Datachannels", function() {
+                                    console.log("Processing SFU Stability ...")
                                     getStability(sfu, "SFU", function() {
+                                        console.log("Processing Kurento Stability ...")
                                         getStability(capabilities, "Capabilities", function() {
+                                            console.log("Processing WebRtc Stability ...")
                                             getStability(ice, "WebRtc", function() {
+                                                console.log("Processing Cluster Stability ...")
                                                 getStability(cluster, "Cluster", function() {
                                                     console.log("Report created at: ", filePath + fileName);
                                                 })
