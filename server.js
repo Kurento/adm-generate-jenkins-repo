@@ -106,10 +106,17 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                         if ((json.suites[i].cases[j].status == "REGRESSION") || (json.suites[i].cases[j].status == "FAILED")) {
                                             var issueLine = "";
                                             for (issue in issuesRedmine) {
-                                                var message = issuesRedmine[issue].description.split("Message: ")
+                                                var message = issuesRedmine[issue].description.split("****")
                                                 if (message.length > 0) {
-                                                    if ((issuesRedmine[issue].description.indexOf(job) != -1) && (json.suites[i].cases[j].errorDetails.indexOf(message[1]) != -1)) {
-                                                        issueLine = '<font size="2" color="black">: Issue <a href="https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font>';
+                                                    //https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id
+                                                    var existMessage = false;
+                                                    for (var m = message.length - 1; m >= 0; m--) {
+                                                        if ((message[m] != '' && message[m] != '\n') && json.suites[i].cases[j].errorDetails.indexOf(message[m]) != -1) {
+                                                            existMessage = true;
+                                                        }
+                                                    };
+                                                    if ((issuesRedmine[issue].description.indexOf(job) != -1) && existMessage) {
+                                                        issueLine = '<font size="2" color="black">: Issue <a href="' + issuesRedmine[issue].url + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font>';
                                                         break;
                                                     }
                                                 }
@@ -219,7 +226,7 @@ function getStability(jobs, auditFolder, callbackEnd) {
             jobLine = jobLine + '<ul>';
             for (issue in issuesRedmine) {
                 if (issuesRedmine[issue].description.indexOf(job) != -1) {
-                    jobLine = jobLine + '<li><font size="2" color="black"><a href="https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font></li>';
+                    jobLine = jobLine + '<li><font size="2" color="black"><a href="' + issuesRedmine[issue].url + '" target="_blank">#' + issuesRedmine[issue].id + '</a> - ' + issuesRedmine[issue].status + '</font></li>';
                 }
             }
             jobLine = jobLine + '</ul>';
@@ -260,7 +267,8 @@ function getIssuesRedmine(callback) {
                     subject: issue.subject,
                     status: issue.status.name,
                     id: issue.id,
-                    description: issue.description
+                    description: issue.description,
+                    url: 'https://redmine.kurento.org/redmine/issues/' + issue.id
                 };
                 issuesList.push(oneIssue);
             };
@@ -278,33 +286,121 @@ fs.writeFile(filePath + fileName, '<h2>Estado de los Dashboards</h2><font size="
     }
 });
 
+var Trello = require("node-trello");
+var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71eaf4657c2600348cd64b35fa57c30e6e52c38834f");
 
-//getStatus(cluster, "Cluster", function() {});
+/*t.get("/1/members/me", function(err, data) {
+  if (err) throw err;
+  console.log(data);
+});*/
+
+
+// 566562180f0520308b696468 - https://trello.com/b/rF2FksBo/devops-ci-dashboard
+// 55e06936c58d0dd41677730a - https://trello.com/b/ZU9T2a1w/apps-apis-dashboard
+// 55e04479402e09ba324dd485 - https://trello.com/b/MgCVSBM8/media-server-backlog
+
+/*t.get("/1/boards/55e06936c58d0dd41677730a?lists=open&list_fields=name&fields=name,desc", function(err, data) {
+    if (err) throw err;
+    console.log("55e06936c58d0dd41677730a", data);
+});
+*/
+// 1/boards/55e06936c58d0dd41677730a?lists=open&list_fields=name&fields=name,desc
+// Get list of issues
+// 1/list/56bda041476abe11e0d54a59?fields=name&cards=open&card_fields=name
+
+// Get information for each issue
+// 1/cards/574c4c8d7b89d05856356f37/actions
+//https://api.trello.com/1/boards/55e04479402e09ba324dd485/lists
+
+
+function getIssueTrelloById(id, callback_) {
+    t.get("1/list/" + id + "?fields=name&cards=open&card_fields=name", function(err, data) {
+        if (err) throw err;
+        async.each(data.cards, function(job, callback) {
+            async.parallel([
+                    function(callback) {
+                        t.get("/1/cards/" + job.id, function(err, card) {
+                            var url = card.shortUrl;
+                            t.get("/1/cards/" + job.id + "/actions", function(err, infoCard) {
+                                var description = "";
+                                var subject = job.name;
+                                var id = job.id;
+                                for (elem in infoCard) {
+                                    if (infoCard[elem].type == "commentCard") {
+                                        description = description + " " + infoCard[elem].data.text;
+                                    }
+                                }
+                                var oneIssue = {
+                                    subject: subject,
+                                    status: "Open",
+                                    id: id,
+                                    description: description,
+                                    url: url
+                                };
+                                issuesRedmine.push(oneIssue);
+                                callback(oneIssue)
+                            });
+                        });
+                    }
+                ],
+                // optional callback
+                function(err, results) {
+                    callback();
+                });
+        }, function(err) {
+            callback_()
+        });
+    });
+}
+
+function getIssueTrello(callback) {
+
+    async.parallel([
+            function(callback_) {
+                // Id bug board of https://trello.com/b/MgCVSBM8/media-server-backlog
+                getIssueTrelloById('55e04489abe6984f1d19ebb4', callback_)
+            },
+            function(callback_) {
+                // Id Bug board of https://trello.com/b/rF2FksBo/devops-ci-dashboard
+                getIssueTrelloById('56bda041476abe11e0d54a59', callback_)
+            },
+            function(callback_) {
+                // Id Bug board of https://trello.com/b/rF2FksBo/devops-ci-dashboard
+                getIssueTrelloById('5731e7cb84d97439fdcfdfbc', callback_)
+            }
+        ],
+        function(err, results) {
+            callback();
+        });
+}
+
+
 getIssuesRedmine(function(issues) {
     issuesRedmine = issues;
-
-    getStatus(datachannels, "Datachannels", function() {
-        getStatus(sfu, "SFU", function() {
-            getStatus(capabilities, "Capabilities", function() {
-                getStatus(ice, "WebRtc", function() {
-                    getStatus(cluster, "Cluster", function() {
-                        fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
-                            if (err) {
-                                return console.log(err);
-                            }
-                            getStability(datachannels, "Datachannels", function() {
-                                getStability(sfu, "SFU", function() {
-                                    getStability(capabilities, "Capabilities", function() {
-                                        getStability(ice, "WebRtc", function() {
-                                            getStability(cluster, "Cluster", function() {
-                                                console.log("Report created at: ", filePath + fileName);
+    getIssueTrello(function(issues_) {
+        getStatus(datachannels, "Datachannels", function() {
+            getStatus(sfu, "SFU", function() {
+                getStatus(capabilities, "Capabilities", function() {
+                    getStatus(ice, "WebRtc", function() {
+                        getStatus(cluster, "Cluster", function() {
+                            fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
+                                if (err) {
+                                    return console.log(err);
+                                }
+                                getStability(datachannels, "Datachannels", function() {
+                                    getStability(sfu, "SFU", function() {
+                                        getStability(capabilities, "Capabilities", function() {
+                                            getStability(ice, "WebRtc", function() {
+                                                getStability(cluster, "Cluster", function() {
+                                                    console.log("Report created at: ", filePath + fileName);
+                                                })
                                             })
                                         })
                                     })
                                 })
                             })
-                        })
-                    });
+                        });
+                    })
 
                 })
             })

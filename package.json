@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "async": "^2.0.0-rc.6",
-    "node-libcurl": "^1.0.0"
+    "node-libcurl": "^1.0.0",
+    "node-trello": "^1.1.2"
   },
   "devDependencies": {}
 }
