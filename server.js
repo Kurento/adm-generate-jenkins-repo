@@ -272,8 +272,11 @@ function getIssuesRedmine(callback) {
             for (var i = issues.length - 1; i >= 0; i--) {
                 var issue = issues[i];
                 var status = issue.status.name;
+                var descriptionHtml = '<b>Redmine; </b><b>Issue:</b> (' + issue.subject + '; <a href="' + url + '" target="_blank">#' + issue.id + '</a>); <b>Status:</b> ' + status
+
                 if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
                     status = status + " " + issue.updated_on.split('T')[0];
+                    descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
                 }
                 var url = 'https://redmine.kurento.org/redmine/issues/' + issue.id;
                 var oneIssue = {
@@ -282,7 +285,7 @@ function getIssuesRedmine(callback) {
                     id: issue.id,
                     description: issue.description,
                     url: url,
-                    descriptionHtml: '<b>Redmine; </b><b>Issue:</b> (' + issue.subject + '; <a href="' + url + '" target="_blank">#' + issue.id + '</a>); <b>Status:</b> ' + status
+                    descriptionHtml: descriptionHtml
                 };
                 issuesList.push(oneIssue);
             };
@@ -350,13 +353,18 @@ function getIssueTrelloById(id, dashboard, columnName, callback_) {
                                         description = description + " " + infoCard[elem].data.text;
                                     }
                                 }
+                                var descriptionHtml = '<b>Dashboard:</b> ' + dashboard + '; <b>Issue:</b> (' + subject + '; <a href="' + url + '" target="_blank">#' + id + '</a>); <b>Status:</b> ' + columnName
+
+                                if (columnName.indexOf('Completada') != -1) {
+									descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
+                                }
                                 var oneIssue = {
                                     subject: subject,
                                     status: columnName,
                                     id: id,
                                     description: description,
                                     url: url,
-                                    descriptionHtml: '<b>Dashboard:</b> ' + dashboard + '; <b>Issue:</b> (' + subject + '; <a href="' + url + '" target="_blank">#' + id + '</a>); <b>Status:</b> ' + columnName
+                                    descriptionHtml: descriptionHtml
                                 };
                                 issuesRedmine.push(oneIssue);
                                 callback(oneIssue)
