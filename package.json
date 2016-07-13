@@ -1,0 +1,24 @@
+{
+  "name": "kurento-generate-jenkins-report",
+  "version": "1.0.0-dev",
+  "description": "Node application to generate the report of Jenkins",
+  "homepage": "http://www.kurento.org",
+  "license": "ALv2",
+  "author": "Kurento <info@kurento.com> (http://kurento.org)",
+  "contributors": [
+    {
+      "name": "Raul Benitez 'rbenitez'",
+      "email": "raulbenitezmejias@gmail.com"
+    }
+  ],
+  "scripts": {},
+  "repository": {},
+  "bugs": {
+    "email": "kurento@googlegroups.com"
+  },
+  "dependencies": {
+    "async": "^2.0.0-rc.6",
+    "node-libcurl": "^1.0.0"
+  },
+  "devDependencies": {}
+}
