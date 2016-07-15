@@ -84,7 +84,7 @@ function getStatus(jobs, auditFolder, callbackEnd) {
         async.parallel([
                 function(callback) {
 
-                    var URI = 'https://' + authJenkins + '@' + path + auditFolder + '/job/' + job + '/lastCompletedBuild/testReport/api/json?pretty=true';
+                    var URI = 'https://' + authJenkins + '@' + path + auditFolder + '/job/' + job + '/lastBuild/testReport/api/json?pretty=true';
 
                     var options = {
                         url: URI,
@@ -107,7 +107,7 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                     var suite = json.suites[i].name;
                                     var pos = suite.lastIndexOf(".");
                                     var suiteUrl = suite.substring(0, pos) + '/' + suite.substring(pos + 1);
-                                    var suiteLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '/lastCompletedBuild/testReport/' + suiteUrl + '" target="_blank">' + suite.substring(suite.lastIndexOf('.') + 1) + '</a></font>';
+                                    var suiteLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '/lastBuild/testReport/' + suiteUrl + '" target="_blank">' + suite.substring(suite.lastIndexOf('.') + 1) + '</a></font>';
                                     var hasRegression = false;
                                     var casesLine = "<ul>";
                                     for (var j = json.suites[i].cases.length - 1; j >= 0; j--) {
@@ -149,6 +149,13 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                 });
 
                             }
+                        } else {
+                            var jobLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul><li><font size="2" color="black">No está la página de reporte. El job no ha terminado correctamente.</font></li></ul>';
+                            fs.appendFile(filePath + fileName, jobLine, function(err) {
+                                if (err) {
+                                    return console.log(err);
+                                }
+                            });
                         }
                         callback(null, job);
                     })
@@ -253,7 +260,7 @@ function getStability(jobs, auditFolder, callbackEnd) {
 
 function getIssuesRedmine(callback) {
     var issuesList = new Array();
-    var URI = 'https://' + authRedmine + '@redmine.kurento.org/redmine/projects/kurento-media-server/issues.json?status_id=*';
+    var URI = 'https://' + authRedmine + '@redmine.kurento.org/redmine/projects/kurento-media-server/issues.json?status_id=*&limit=3000';
 
     var options = {
         url: URI,
@@ -296,7 +303,7 @@ function getIssuesRedmine(callback) {
 }
 
 // Init
-fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <h2>Estado de los Dashboards</h2><font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
+fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
     if (err) {
         return console.log(err);
     }
@@ -355,7 +362,7 @@ function getIssueTrelloById(id, dashboard, columnName, callback_) {
                                 }
                                 var descriptionHtml = '<b>Dashboard:</b> ' + dashboard + '; <b>Issue:</b> (' + subject + '; <a href="' + url + '" target="_blank">#' + id + '</a>); <b>Status:</b> ' + columnName
 
-                                if (columnName.indexOf('Completada') != -1) {
+                                if ((columnName.indexOf('Completada') != -1) || (columnName.indexOf('Complete') != -1)) {
                                     descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + '</span></strike>';
                                 }
                                 var oneIssue = {
