@@ -24,7 +24,7 @@ var t = new Trello("7d4cd779f4ff430c4dfb3c1bccb437cd", "16fbb7dd9a3b2b7fa8b6a71e
 
 // Jobs:
 var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
-    "dispatcher_functional_audit", "kms_profiling_audit", "kurento_api_client_java_W_audit",
+    "dispatcher_functional_audit", "kurento_api_client_java_W_audit",
     "kurento_api_client_js_W_browser_audit", "kurento_api_client_js_W_node_0_12_audit",
     "kurento_api_client_js_W_node_4_x_audit", "kurento_api_client_js_W_node_5_x_audit",
     "kurento_api_client_js_W_node_6_x_audit", "kurento_api_client_js_W_node_restart_audit",
