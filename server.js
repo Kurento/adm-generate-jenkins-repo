@@ -254,7 +254,72 @@ function getStability(jobs, auditFolder, callbackEnd) {
             callbackEnd();
         });
     });
+}
 
+function getLastExecution(jobs, auditFolder, callbackEnd) {
+    var nameDashboard = auditFolder;
+    if (auditFolder == "Capabilities") {
+        nameDashboard = "Kurento";
+    } else if (auditFolder == "WebRtc") {
+        nameDashboard = "WebRTC"
+    }
+
+    var auditFolderLine = '<h3><a href="https://ci.kurento.org/jenkins/job/Development/view/4%20-%20Audit/view/' + auditFolder + '" target="_blank">' + nameDashboard + '</a></h3><ul>';
+    fs.appendFile(filePath + fileName, auditFolderLine, function(err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+    var jobByScore = new Array();
+    async.each(jobs, function(job, callback) {
+        async.parallel([
+                function(callback) {
+
+                    var URI = 'https://' + authJenkins + '@' + path + auditFolder + '/job/' + job + '/lastBuild/api/json?pretty=true';
+
+                    var options = {
+                        url: URI,
+                        headers: {
+                            'Content-Type': 'Content-Type: application/json',
+                            'Accept': 'application/json'
+                        },
+                        strictSSL: false,
+                        method: 'POST'
+                    }
+
+                    request(options, function(error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var json = JSON.parse(body);
+                            var lastExecution = Math.round(Math.floor((Date.now() - json.timestamp) / 1000) / 60 / 60);
+                            if (lastExecution >= 20) {
+                                var jobLine = '<li><font size="2" color="black">Última ejecución: ' + lastExecution + ' horas  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
+                                jobLine = jobLine + '<ul>';
+                                jobLine = jobLine + '</ul>';
+                                fs.appendFile(filePath + fileName, "" + jobLine + "", function(err) {
+                                    if (err) {
+                                        return console.log(err);
+                                    }
+                                    callback();
+                                });
+                            } else {
+                                callback();
+                            }
+                        }
+                    })
+                }
+            ],
+            // optional callback
+            function(err, results) {
+                callback();
+            });
+    }, function(err) {
+        fs.appendFile(filePath + fileName, "</ul>", function(err) {
+            if (err) {
+                return console.log(err);
+            }
+            callbackEnd();
+        });
+    });
 }
 
 
@@ -421,31 +486,56 @@ getIssuesRedmine(function(issues) {
     issuesRedmine = issues;
     console.log("Getting Trello issues ...");
     getIssueTrello(function(issues_) {
-        console.log("Processing Datachannels Dashboard ...")
-        getStatus(datachannels, "Datachannels", function() {
-            console.log("Processing SFU Dashboard ...");
-            getStatus(sfu, "SFU", function() {
-                console.log("Processing Kurento Dashboard ...");
-                getStatus(capabilities, "Capabilities", function() {
-                    console.log("Processing WebRtc Dashboard ...");
-                    getStatus(ice, "WebRtc", function() {
-                        console.log("Processing Cluster Dashboard ...")
-                        getStatus(cluster, "Cluster", function() {
-                            fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
-                                if (err) {
-                                    return console.log(err);
-                                }
-                                console.log("Processing Datachannels Stability ...")
-                                getStability(datachannels, "Datachannels", function() {
-                                    console.log("Processing SFU Stability ...")
-                                    getStability(sfu, "SFU", function() {
-                                        console.log("Processing Kurento Stability ...")
-                                        getStability(capabilities, "Capabilities", function() {
-                                            console.log("Processing WebRtc Stability ...")
-                                            getStability(ice, "WebRtc", function() {
-                                                console.log("Processing Cluster Stability ...")
-                                                getStability(cluster, "Cluster", function() {
-                                                    console.log("Report created at: ", filePath + fileName);
+        fs.appendFile(filePath + fileName, '<h2>Última ejecución:</h2>', function(err) {
+            if (err) {
+                return console.log(err);
+            }
+            console.log("Processing Datachannels Last Execution ...")
+            getLastExecution(datachannels, "Datachannels", function() {
+                console.log("Processing SFU Last Execution ...")
+                getLastExecution(sfu, "SFU", function() {
+                    console.log("Processing Capabilities Last Execution ...")
+                    getLastExecution(capabilities, "Capabilities", function() {
+                        console.log("Processing WebRtc Last Execution ...")
+                        getLastExecution(ice, "WebRtc", function() {
+                            console.log("Processing Cluster Last Execution ...")
+                            getLastExecution(cluster, "Cluster", function() {
+                                fs.appendFile(filePath + fileName, '<h2> Estado de los Dashboards </h2>', function(err) {
+                                    if (err) {
+                                        return console.log(err);
+                                    }
+                                    console.log("Processing Datachannels Dashboard ...")
+                                    getStatus(datachannels, "Datachannels", function() {
+                                        console.log("Processing SFU Dashboard ...");
+                                        getStatus(sfu, "SFU", function() {
+                                            console.log("Processing Kurento Dashboard ...");
+                                            getStatus(capabilities, "Capabilities", function() {
+                                                console.log("Processing WebRtc Dashboard ...");
+                                                getStatus(ice, "WebRtc", function() {
+                                                    console.log("Processing Cluster Dashboard ...")
+                                                    getStatus(cluster, "Cluster", function() {
+                                                        fs.appendFile(filePath + fileName, '<h2>Estabilidad VS Issues</h2>', function(err) {
+                                                            if (err) {
+                                                                return console.log(err);
+                                                            }
+                                                            console.log("Processing Datachannels Stability ...")
+                                                            getStability(datachannels, "Datachannels", function() {
+                                                                console.log("Processing SFU Stability ...")
+                                                                getStability(sfu, "SFU", function() {
+                                                                    console.log("Processing Kurento Stability ...")
+                                                                    getStability(capabilities, "Capabilities", function() {
+                                                                        console.log("Processing WebRtc Stability ...")
+                                                                        getStability(ice, "WebRtc", function() {
+                                                                            console.log("Processing Cluster Stability ...")
+                                                                            getStability(cluster, "Cluster", function() {
+                                                                                console.log("Report created at: ", filePath + fileName);
+                                                                            })
+                                                                        })
+                                                                    })
+                                                                })
+                                                            })
+                                                        })
+                                                    })
                                                 })
                                             })
                                         })
@@ -454,7 +544,6 @@ getIssuesRedmine(function(issues) {
                             })
                         });
                     })
-
                 })
             })
         })
