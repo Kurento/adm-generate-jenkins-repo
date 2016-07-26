@@ -33,7 +33,7 @@ var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
     "kurento_api_repository_java_audit", "kurento_room_audit", "kurento_tutorial_java_audit",
     "kurento_tutorial_java_fiware", "longstability_recorder_s3_audit", "player_functional_audit",
     "player_stability_audit", "recorder_functional_audit", "recorder_s3_functional_audit",
-    "recorder_stability_audit", "repository_functional_audit"
+    "recorder_stability_audit", "repository_functional_audit", "longstability_check_memory_audit"
 ];
 
 var sfu = ["sfu_stability_audit", "sfu_quality_audit", "sfu_functional_recorder_audit",
@@ -360,13 +360,12 @@ function getIssuesRedmine(callback) {
             for (var i = issues.length - 1; i >= 0; i--) {
                 var issue = issues[i];
                 var status = issue.status.name;
+                var url = 'https://redmine.kurento.org/redmine/issues/' + issue.id;
                 var descriptionHtml = '<b>Redmine; </b><b>Issue:</b> (' + issue.subject + '; <a href="' + url + '" target="_blank">#' + issue.id + '</a>); <b>Status:</b> ' + status
-
                 if (issue.status.name == 'Closed' || issue.status.name == 'Resolved') {
                     status = status + " " + issue.updated_on.split('T')[0];
                     descriptionHtml = '<strike style="color:red"><span style="color:black">' + descriptionHtml + ' - ' + issue.updated_on.split('T')[0] + '</span></strike>';
                 }
-                var url = 'https://redmine.kurento.org/redmine/issues/' + issue.id;
                 var oneIssue = {
                     subject: issue.subject,
                     status: status,
