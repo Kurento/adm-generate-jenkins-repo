@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 var request = require('request');
 var async = require('async');
 var minimist = require('minimist');
@@ -496,6 +496,69 @@ function getIssueTrello(callback) {
     });
 }
 
+function getMetricsByJob(jobs, auditFolder, callbackEnd) {
+
+    var nameDashboard = auditFolder;
+    if (auditFolder == "Capabilities") {
+        nameDashboard = "Kurento";
+    } else if (auditFolder == "WebRtc") {
+        nameDashboard = "WebRTC"
+    }
+
+    var auditFolderLine = '<h3><a href="https://ci.kurento.org/jenkins/job/Development/view/1%20-%20Dashboards/view/' + nameDashboard + '" target="_blank">' + nameDashboard + '</a></h3><ul>';
+    fs.appendFile(filePath + fileName, auditFolderLine, function(err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+
+    async.eachOfSeries(jobs, function(job, key, callback) {
+        var today = new Date().toJSON().slice(0, 10);
+        getWarningErrosByJob(today + "T00:00:00", today + "T23:59:59", job, function() {
+            callback(null, job);
+        });
+    }, function(err) {
+        // Nothing to do
+        callbackEnd()
+    });
+}
+
+
+function getWarningErrosByJob(from, to, job, callback) {
+    var queryes = { "sort": [{ "@timestamp": "asc" }], "query": { "indices": { "indices": ["<test.executions>"], "query": { "filtered": { "filter": { "bool": { "must": [{ "range": { "@timestamp": { "gte": from, "lte": to } } }, { "range": { "numWarnsAndErrors": { "gt": 0 } } }, { "multi_match": { "query": job, "type": "phrase", "fields": ["testName", "testFullName", "testClassName", "jobName"] } }] } } } }, "no_match_query": "none" } }, "size": 50, "_source": ["buildId", "buildTag", "buildUrl", "clusterName", "tclusterUri", "jobName", "jobUrl", "numWarnsAndErrors", "testMark", "testClassName", "testFullName", "testName", "@timestamp", "testEndTime", "testStartTime"] }
+
+    var options = {
+        url: 'http://elasticsearch.kurento.org:9200/_search?scroll=1m&filter_path=_scroll_id,hits.hits._source,hits.hits._type,hits',
+        headers: {
+            'Content-Type': 'Content-Type: application/json',
+            'Accept': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify(queryes)
+    }
+
+    request(options, function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var data = JSON.parse(body)
+
+            var total = data.hits.total;
+            if (total > 0) {
+                var url = "https://ci.kurento.org/jenkins/view/1%20-%20Folders/job/Development/view/1%20-%20Dashboards/view/Cluster/job/" + job + "/lastSuccessfulBuild/artifact/kurento-cluster/kmscluster-controller/target/report.html";
+                var testLine = '<li><font size="2" color="black"><a href="' + url + '" target="_blank">' + job + '</a></font></li>';
+
+                fs.appendFile(filePath + fileName, testLine, function(err) {
+                    if (err) {
+                        return console.log(err);
+                    }
+                });
+            }
+        } else {
+            console.log("Error:", error)
+        }
+        callback()
+    })
+}
+
 console.log("Getting Redmine issues ...");
 getIssuesRedmine(function(issues) {
     issuesRedmine = issues;
@@ -543,7 +606,15 @@ getIssuesRedmine(function(issues) {
                                                                         getStability(ice, "WebRtc", function() {
                                                                             console.log("Processing Cluster Stability ...")
                                                                             getStability(cluster, "Cluster", function() {
-                                                                                console.log("Report created at: ", filePath + fileName);
+                                                                                console.log("Getting Warning/Error from Cluster ...");
+                                                                                fs.appendFile(filePath + fileName, '<h2>Warnings/Errors</h2>', function(err) {
+                                                                                    if (err) {
+                                                                                        return console.log(err);
+                                                                                    }
+                                                                                    getMetricsByJob(cluster, "Cluster", function() {
+                                                                                        console.log("Report created at: ", filePath + fileName);
+                                                                                    })
+                                                                                })
                                                                             })
                                                                         })
                                                                     })
