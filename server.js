@@ -145,6 +145,9 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                                     }
                                                 }
                                             }
+                                            if (issueLine == "") {
+                                                issueLine = '<ul><li><font size="2" color="black"><b>Message error:</b> ' + json.suites[i].cases[j].errorDetails + '</font></ul></li>';
+                                            }
                                             hasRegression = true;
                                             casesLine = casesLine + '<li><font size="2" color="black">' + json.suites[i].cases[j].name + ' ' + issueLine + '</font></li>';
                                         }
