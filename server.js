@@ -33,16 +33,16 @@ var capabilities = ["agnostic_functional_audit", "composite_functional_audit",
     "kurento_api_repository_java_audit", "kurento_room_audit", "kurento_tutorial_java_audit",
     "kurento_tutorial_java_fiware", "longstability_recorder_s3_audit", "player_functional_audit",
     "player_stability_audit", "recorder_functional_audit", "recorder_s3_functional_audit",
-    "recorder_stability_audit", "repository_functional_audit", "longstability_check_memory_audit"
+    "recorder_stability_audit", "repository_functional_audit", "longstability_check_memory_audit", "pipeline_stability_audit"
 ];
 
 var sfu = ["sfu_stability_audit", "sfu_quality_audit", "sfu_functional_recorder_audit",
-    "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_chrome"
+    "sfu_functional_one2many_chrome_beta_chrome_beta", "sfu_functional_one2many_chrome_dev_chrome_dev", "sfu_functional_one2many_chrome_chrome"
 ];
 
 var cluster = ["test_cluster_autoscaling", "test_cluster_cloud", "test_cluster_ha", "test_cluster_kurento_client_js",
     "test_cluster_longtermstability", "test_cluster_recorder", "test_cluster_stability", "test_cluster_webrtc_cs_presenter",
-    "test_cluster_webrtc_cs_session", "test_cluster_webrtc_cs_viewer"
+    "test_cluster_webrtc_cs_session", "test_cluster_webrtc_cs_viewer", "test_cluster_webrtc_cs_viewer_chrome_beta"
 ];
 
 var ice = ["ice_ipv4_cluster_udp_reflexive_chrome_dev", "ice_ipv4_cluster_udp_reflexive_chrome_beta", "ice_ipv4_cluster_udp_reflexive_chrome",
