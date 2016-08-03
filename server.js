@@ -516,8 +516,11 @@ function getMetricsByJob(jobs, auditFolder, callbackEnd) {
     });
 
     async.eachOfSeries(jobs, function(job, key, callback) {
+        var yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday = yesterday.toJSON().slice(0, 10);
         var today = new Date().toJSON().slice(0, 10);
-        getWarningErrosByJob(today + "T00:00:00", today + "T23:59:59", job, function() {
+        getWarningErrosByJob(yesterday + "T21:00:00", today + "T23:59:59", job, function() {
             callback(null, job);
         });
     }, function(err) {
