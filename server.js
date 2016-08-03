@@ -116,14 +116,14 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                         if (!error && response.statusCode == 200) {
                             var json = JSON.parse(body);
                             if (json.failCount > 0) {
-                                var jobLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul>';
+                                var jobLine = '<li><font size="3" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul>';
                                 var line = "";
                                 line = line + jobLine;
                                 for (var i = 0; i < json.suites.length; i++) {
                                     var suite = json.suites[i].name;
                                     var pos = suite.lastIndexOf(".");
                                     var suiteUrl = suite.substring(0, pos) + '/' + suite.substring(pos + 1);
-                                    var suiteLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '/lastBuild/testReport/' + suiteUrl + '" target="_blank">' + suite.substring(suite.lastIndexOf('.') + 1) + '</a></font>';
+                                    var suiteLine = '<li><font size="3" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '/lastBuild/testReport/' + suiteUrl + '" target="_blank">' + suite.substring(suite.lastIndexOf('.') + 1) + '</a></font>';
                                     var hasRegression = false;
                                     var casesLine = "<ul>";
                                     for (var j = json.suites[i].cases.length - 1; j >= 0; j--) {
@@ -140,16 +140,16 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                                         }
                                                     };
                                                     if ((issuesRedmine[issue].description.indexOf(job) != -1) && existMessage) {
-                                                        issueLine = '<ul><li><font size="2" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></ul></li>';
+                                                        issueLine = '<ul><li><font size="3" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></ul></li>';
                                                         break;
                                                     }
                                                 }
                                             }
                                             if (issueLine == "") {
-                                                issueLine = '<ul><li><font size="2" color="black"><b>Message error:</b> ' + json.suites[i].cases[j].errorDetails + '</font></ul></li>';
+                                                issueLine = '<ul><li><font size="3" color="black"><b>Message error:</b> ' + json.suites[i].cases[j].errorDetails + '</font></ul></li>';
                                             }
                                             hasRegression = true;
-                                            casesLine = casesLine + '<li><font size="2" color="black">' + json.suites[i].cases[j].name + ' ' + issueLine + '</font></li>';
+                                            casesLine = casesLine + '<li><font size="3" color="black">' + json.suites[i].cases[j].name + ' ' + issueLine + '</font></li>';
                                         }
                                     };
 
@@ -169,7 +169,7 @@ function getStatus(jobs, auditFolder, callbackEnd) {
 
                             }
                         } else {
-                            var jobLine = '<li><font size="2" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul><li><font size="2" color="black">No está la página de reporte. El job no ha terminado correctamente.</font></li></ul>';
+                            var jobLine = '<li><font size="3" color="black"><a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul><li><font size="3" color="black">No está la página de reporte. El job no ha terminado correctamente.</font></li></ul>';
                             fs.appendFile(filePath + fileName, jobLine, function(err) {
                                 if (err) {
                                     return console.log(err);
@@ -256,11 +256,11 @@ function getStability(jobs, auditFolder, callbackEnd) {
         for (i in jobByScore) {
             var score = jobByScore[i].score;
             var job = jobByScore[i].job;
-            jobLine = jobLine + '<li><font size="2" color="black">Estabilidad: ' + score + '%  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
+            jobLine = jobLine + '<li><font size="3" color="black">Estabilidad: ' + score + '%  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
             jobLine = jobLine + '<ul>';
             for (issue in issuesRedmine) {
                 if (issuesRedmine[issue].description.indexOf(job) != -1) {
-                    jobLine = jobLine + '<li><font size="2" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></li>';
+                    jobLine = jobLine + '<li><font size="3" color="black">' + issuesRedmine[issue].descriptionHtml + '</font></li>';
                 }
             }
             jobLine = jobLine + '</ul>';
@@ -311,7 +311,7 @@ function getLastExecution(jobs, auditFolder, callbackEnd) {
                             var json = JSON.parse(body);
                             var lastExecution = Math.round(Math.floor((Date.now() - json.timestamp) / 1000) / 60 / 60);
                             if (lastExecution >= 20) {
-                                var jobLine = '<li><font size="2" color="black">Última ejecución: ' + lastExecution + ' horas  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
+                                var jobLine = '<li><font size="3" color="black">Última ejecución: ' + lastExecution + ' horas  <a href="https://' + path + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li>';
                                 jobLine = jobLine + '<ul>';
                                 jobLine = jobLine + '</ul>';
                                 fs.appendFile(filePath + fileName, "" + jobLine + "", function(err) {
@@ -386,7 +386,7 @@ function getIssuesRedmine(callback) {
 }
 
 // Init
-fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <font size="2" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
+fs.writeFile(filePath + fileName, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <font size="3" color="black">Nota: No se está ejecutando ningún test con firefox por el problema eventual que hay entre Selenium 2.53.0 y Firefox 47. Estamos esperando a la versión 2.53.1 de Selenium</font>', 'utf8', function(err) {
     if (err) {
         return console.log(err);
     }
@@ -550,7 +550,7 @@ function getWarningErrosByJob(from, to, job, callback) {
             var total = data.hits.total;
             if (total > 0) {
                 var url = "https://ci.kurento.org/jenkins/view/1%20-%20Folders/job/Development/view/1%20-%20Dashboards/view/Cluster/job/" + job + "/lastSuccessfulBuild/artifact/kurento-cluster/kmscluster-controller/target/report.html";
-                var testLine = '<li><font size="2" color="black"><a href="' + url + '" target="_blank">' + job + '</a></font></li>';
+                var testLine = '<li><font size="3" color="black"><a href="' + url + '" target="_blank">' + job + '</a></font></li>';
 
                 fs.appendFile(filePath + fileName, testLine, function(err) {
                     if (err) {
