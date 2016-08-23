@@ -135,7 +135,7 @@ function getStatus(jobs, auditFolder, callbackEnd) {
                                                     //https://redmine.kurento.org/redmine/issues/' + issuesRedmine[issue].id
                                                     var existMessage = false;
                                                     for (var m = message.length - 1; m >= 0; m--) {
-                                                        if ((message[m] != '' && message[m] != '\n') && json.suites[i].cases[j].errorDetails.indexOf(message[m]) != -1) {
+                                                        if ((message[m] != '' && message[m] != '\n') && json.suites[i].cases[j].errorDetails != null && json.suites[i].cases[j].errorDetails.indexOf(message[m]) != -1) {
                                                             existMessage = true;
                                                         }
                                                     };
