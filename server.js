@@ -59,6 +59,18 @@ var dashboards = [{
     jobs: jobs.cluster
 }];
 
+var dashboardsMerge = [{
+    name: "Merged%20Media%20Server%20Trusty",
+    jobs: jobs.mergedMediaServerTrusty
+}, {
+    name: "Merged%20Media%20Server%20Xenial",
+    jobs: jobs.mergedMediaServerXenial
+}, {
+    name: "Merged%20Java%20and%20JS",
+    jobs: jobs.mergedJavaJs
+}];
+
+
 // First message
 var reportHtml = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> <font size="3" color="black">Nota: En el dashboard de Kurento todavía no se está usando Firefox, porque hay que adaptar las estadísticas a cómo se obtienen desde Firefox y hay un detalle con el currentTime de Firefox que hay que averiguar si es problema de Firefox o nuestro.</font>';
 
@@ -90,6 +102,19 @@ async.series([
             async.eachOfSeries(dashboards, function(dashboard, key, callback) {
                 console.log("Processing status for ", dashboard.name, " ...")
                 utils.getStatus(dashboard.jobs, dashboard.name, authJenkins, allIssues, function(html) {
+                    reportHtml = reportHtml + html;
+                    callback(null);
+                })
+            }, function() {
+                callback(null);
+            });
+        },
+        function(callback) {
+            reportHtml = reportHtml + '<h2> Estado de los Merged </h2>';
+            // Get Status
+            async.eachOfSeries(dashboardsMerge, function(dashboard, key, callback) {
+                console.log("Processing status for ", dashboard.name, " ...")
+                utils.getMergedStatus(dashboard.jobs, dashboard.name, authJenkins, allIssues, function(html) {
                     reportHtml = reportHtml + html;
                     callback(null);
                 })

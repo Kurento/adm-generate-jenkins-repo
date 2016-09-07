@@ -18,6 +18,7 @@ var request = require('request');
 var async = require('async');
 
 var path = "ci.kurento.org/jenkins/job/Development/view/4%20-%20Audit/view/";
+var pathMerged = "ci.kurento.org/jenkins/job/Development/view/1%20-%20Dashboards/view/"
 
 function getStatus(jobs, auditFolder, authJenkins, allIssues, callbackEnd) {
     var statusHtml = "";
@@ -249,6 +250,67 @@ function getLastExecution(jobs, auditFolder, authJenkins, callbackEnd) {
 }
 
 
+function getMergedStatus(jobs, auditFolder, authJenkins, allIssues, callbackEnd) {
+    var statusHtml = "";
+
+    var nameDashboard = auditFolder;
+    if (auditFolder == "Merged%20Media%20Server%20Trusty") {
+        nameDashboard = "Merged Media Server Trusty";
+    } else if (auditFolder == "Merged%20Java%20and%20JS") {
+        nameDashboard = "Merged Java and JS"
+    } else if (auditFolder == "Merged%20Media%20Server%20Xenial") {
+        nameDashboard = "Merged Media Server Xenial"
+    }
+
+    var auditFolderLine = '<h3><a href="https://ci.kurento.org/jenkins/job/Development/view/1%20-%20Dashboards/view/' + nameDashboard + '" target="_blank">' + nameDashboard + '</a></h3><ul>';
+    statusHtml = statusHtml + auditFolderLine;
+
+    async.each(jobs, function(job, callback) {
+        async.parallel([
+                function(callback) {
+
+                    var URI = 'https://' + authJenkins + '@' + pathMerged + auditFolder + '/job/' + job + '/lastBuild/api/json?pretty=true';
+                    var options = {
+                        url: URI,
+                        headers: {
+                            'Content-Type': 'Content-Type: application/json',
+                            'Accept': 'application/json'
+                        },
+                        strictSSL: false,
+                        method: 'POST'
+                    }
+
+                    request(options, function(error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var json = JSON.parse(body);
+                            if (json.result == "FAILURE" || json.result == "REGRESSION") {
+                                var jobLine = '<li><font size="3" color="black"><a href="https://' + pathMerged + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul>';
+                                var line = "";
+                                line = line + jobLine;
+                                statusHtml = statusHtml + line + '</ul>';
+                            }
+                        } else {
+                            var jobLine = '<li><font size="3" color="black"><a href="https://' + pathMerged + auditFolder + '/job/' + job + '" target="_blank">' + job + '</a></font></li><ul><li><font size="3" color="black">No está la página de reporte. El job no ha terminado correctamente.</font></li></ul>';
+                            statusHtml = statusHtml + jobLine;
+                        }
+                        callback(null, job);
+                    })
+                }
+            ],
+            // optional callback
+            function(err, results) {
+
+                callback();
+
+            });
+    }, function(err) {
+        statusHtml = statusHtml + '</ul></ul>';
+        callbackEnd(statusHtml);
+    });
+
+}
+
+
 function getMetricsByJob(jobs, auditFolder, callbackEnd) {
     var metricsHtml = "";
 
@@ -314,5 +376,6 @@ module.exports = {
     getStatus: getStatus,
     getMetricsByJob: getMetricsByJob,
     getLastExecution: getLastExecution,
-    getStability: getStability
+    getStability: getStability,
+    getMergedStatus: getMergedStatus
 }
