@@ -167,6 +167,7 @@ module.exports = {
     sfu: sfu,
     cluster: cluster,
     datachannels: datachannels,
+    ice: ice,
     mergedJavaJs: mergedJavaJs,
     mergedMediaServerTrusty: mergedMediaServerTrusty,
     mergedMediaServerXenial: mergedMediaServerXenial
